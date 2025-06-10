@@ -1,0 +1,5 @@
+numpy==2.1.3
+torch==2.5.1
+fastai==2.7.18
+imantics==0.1.12
+PyQt6==6.9.0

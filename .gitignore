@@ -1,0 +1,17 @@
+.mypy_cache/
+.pytest_cache/
+.vscode/
+build/
+buildvenv/
+.DS_Store
+.DS_Store?
+._*
+__pycache__/
+data
+misc
+pyqtvenv
+dist
+README.md
+src/resources/model/building_segmentation.pkl
+
+src/gui/tools_pane.py
