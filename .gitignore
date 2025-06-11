@@ -12,6 +12,5 @@ misc
 pyqtvenv
 dist
 README.md
-src/resources/model/*
 
 src/gui/tools_pane.py
