@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QApplication
 from gui import ApplicationWindow
 from object_detection import label_func
 
+
 def run():
     """Run the application."""
     app = QApplication(sys.argv)
@@ -14,6 +15,7 @@ def run():
     window.setWindowIcon(QIcon("resources/icons/app_icon.icns"))
     window.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     run()

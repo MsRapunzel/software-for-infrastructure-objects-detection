@@ -1,11 +1,11 @@
 """Module for detecting objects using machine learning."""
-from typing import Any
 from pathlib import Path
 
 from fastai.vision.all import load_learner, PILImage, Learner
 from imantics import Mask
 
-from utils.helpers import get_resource_path, get_file
+from utils.helpers import get_resource_path
+
 
 def label_func(fname: Path) -> Path:
     """
@@ -18,12 +18,14 @@ def label_func(fname: Path) -> Path:
         Output: Path(".../AOI_3_Paris_label_001.tif")
     """
     return fname.parent / fname.name.replace("image", "label")
-    
+
+
 def get_model() -> Learner:
     """Load custom FastAI model. Ensures `label_func` is in scope when unpickling."""
     model_path = get_resource_path('resources/model/building_segmentation.pkl')
     learn = load_learner(model_path)
     return learn
+
 
 def predict_polygons(path_to_img, model=None, progress_callback=None):
     """

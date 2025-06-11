@@ -9,8 +9,8 @@ Usage Example:
     window.show()
     sys.exit(app.exec())
 """
-from PyQt6.QtCore import Qt 
-from PyQt6.QtWidgets import ( 
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QSplitter,
@@ -39,7 +39,7 @@ class ApplicationWindow(QWidget):
 
         self.map_pane = MapPane(self.scene, self)
         self.map_pane.setSceneRect(0, 0, self.scene_width, self.scene_height)
-        self.map_pane.fitInView(self.scene.sceneRect(),Qt.AspectRatioMode.KeepAspectRatio)
+        self.map_pane.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
         self.map_pane.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
         self.menu_bar = MenuBar(self)

@@ -6,15 +6,17 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QGraphicsItemGroup,
     QGraphicsPixmapItem,
+    QGraphicsPolygonItem,
     QListWidgetItem,
     QMessageBox,
     QWidget,
 )
 from PyQt6.QtGui import QAction, QColor, QPen, QPixmap, QPolygonF
-from PyQt6.QtCore import QPointF, Qt 
+from PyQt6.QtCore import QPointF, Qt
 
-from .helpers import *
+import helpers as hp
 from object_detection.object_detection import label_func, get_model, predict_polygons
+
 
 class ApplicationService:
     def __init__(self, parent_widget: Optional[QWidget] = None):
@@ -28,17 +30,17 @@ class ApplicationService:
 
     def add_image(self):
         """Slot. Select an image from a file dialog and add it to the `QGraphicsScene`."""
-        initial_dir = get_resource_path("resources/demo_images")
+        initial_dir = hp.get_resource_path("resources/demo_images")
         filters = "Images (*.png *.jpg *.jpeg *.tif *.tiff);; All files (*.*)"
         file_path, _ = QFileDialog.getOpenFileName(
-            self.parent, 
-            caption="Open Image", 
+            self.parent,
+            caption="Open Image",
             directory=initial_dir,
             filter=filters
         )
 
         if not file_path:
-            show_dialog_box(
+            hp.show_dialog_box(
                 self.parent,
                 window_title="Warning",
                 text="Image could not be opened. Please, try again.",
@@ -65,7 +67,7 @@ class ApplicationService:
             (self.scene_height - scaled_pixmap.height()) / 2,
         )
 
-        graphics_pixmap.setZValue(get_next_z(self.parent))
+        graphics_pixmap.setZValue(hp.get_next_z(self.parent))
         graphics_pixmap.setFlag(QGraphicsPixmapItem.GraphicsItemFlag.ItemIsSelectable)
         self.scene.addItem(graphics_pixmap)
 
@@ -78,7 +80,7 @@ class ApplicationService:
         }
         list_item.setData(Qt.ItemDataRole.UserRole, layer_metadata)
         self.layer_list.addItem(list_item)
-        reorder_list_by_z(self.layer_list)
+        hp.reorder_list_by_z(self.layer_list)
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
     def add_polygon_layer(self, polygons_data):
@@ -90,9 +92,9 @@ class ApplicationService:
         :param polygons_data: List of polygons, where each is [x1, y1, x2, y2, ...]
         Adapted from pycocotools coco.py line 228 (.showAnns(self, anns)).
         """
-        image_item = get_image_item(self.layer_list)
+        image_item = hp.get_image_item(self.layer_list)
         if not image_item:
-            show_dialog_box(
+            hp.show_dialog_box(
                 self.parent,
                 window_title="Warning",
                 text="No image found. Please add an image first.",
@@ -159,7 +161,7 @@ class ApplicationService:
         }
         list_item.setData(Qt.ItemDataRole.UserRole, layer_metadata)
         self.layer_list.addItem(list_item)
-        reorder_list_by_z(self.layer_list)
+        hp.reorder_list_by_z(self.layer_list)
 
     def detect(self):
         """
@@ -173,9 +175,9 @@ class ApplicationService:
         progress_bar.setValue(10)
 
         model = get_model()
-        file_path = get_image_path(self.layer_list)
+        file_path = hp.get_image_path(self.layer_list)
         if not file_path:
-            show_dialog_box(
+            hp.show_dialog_box(
                 self.parent,
                 window_title="Warning",
                 text="The chosen layer is not an image. Please, try again.",
@@ -184,20 +186,20 @@ class ApplicationService:
             )
             progress_bar.setVisible(False)
             return
-        
+
         progress_bar.setValue(30)
-        
+
         try:
             polygons = predict_polygons(file_path, model, progress_callback=lambda x: progress_bar.setValue(x))
             progress_bar.setValue(80)
-            
+
             self.add_polygon_layer(polygons)
-            
+
             progress_bar.setValue(100)
-            show_dialog_box(self.parent, "Success", "The object detection is finished.")
+            hp.show_dialog_box(self.parent, "Success", "The object detection is finished.")
 
         except Exception as e:
-            show_dialog_box(
+            hp.show_dialog_box(
                 self.parent,
                 window_title="Error",
                 text=f"An error occurred during detection: {str(e)}",
@@ -206,16 +208,16 @@ class ApplicationService:
             )
             progress_bar.setVisible(False)
             return
-    
+
     def up(self):
         """Move the currently selected layer up in Z-order."""
         current = self.layer_list.currentItem()
 
         if not current:
             return
-        
+
         layer = current.data(Qt.ItemDataRole.UserRole)
-        item = unwrap_item(layer)
+        item = hp.unwrap_item(layer)
         if layer:
             layers = sorted(self.scene.items(), key=lambda i: i.zValue())
             index = layers.index(item)
@@ -224,7 +226,7 @@ class ApplicationService:
                 z1, z2 = item.zValue(), above_item.zValue()
                 item.setZValue(z2)
                 above_item.setZValue(z1)
-                reorder_list_by_z(self.layer_list)
+                hp.reorder_list_by_z(self.layer_list)
 
     def down(self):
         """Move currently selected layer down in Z-order."""
@@ -232,9 +234,9 @@ class ApplicationService:
 
         if not current:
             return
-        
+
         layer = current.data(Qt.ItemDataRole.UserRole)
-        item = unwrap_item(layer)
+        item = hp.unwrap_item(layer)
         if item:
             items = sorted(self.scene.items(), key=lambda i: i.zValue())
             index = items.index(item)
@@ -243,7 +245,7 @@ class ApplicationService:
                 z1, z2 = item.zValue(), below_item.zValue()
                 item.setZValue(z2)
                 below_item.setZValue(z1)
-                reorder_list_by_z(self.layer_list)
+                hp.reorder_list_by_z(self.layer_list)
 
     def delete_layer(self):
         """
@@ -256,10 +258,10 @@ class ApplicationService:
             return
 
         layer_data = current.data(Qt.ItemDataRole.UserRole)
-        item = unwrap_item(layer_data)
+        item = hp.unwrap_item(layer_data)
         self.scene.removeItem(item)
         self.layer_list.takeItem(self.layer_list.row(current))
-        reorder_list_by_z(self.layer_list)
+        hp.reorder_list_by_z(self.layer_list)
 
     def select_item(self, current, _):
         """
@@ -275,7 +277,7 @@ class ApplicationService:
         """
         if current:
             data = current.data(Qt.ItemDataRole.UserRole)
-            item = unwrap_item(data)
+            item = hp.unwrap_item(data)
 
             if item:
                 item.setSelected(True)

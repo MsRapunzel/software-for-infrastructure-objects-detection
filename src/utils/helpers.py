@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
 )
 
+
 def unwrap_item(data: dict) -> QGraphicsPixmapItem | QGraphicsPolygonItem:
     """
     Helper function.
@@ -27,6 +28,7 @@ def unwrap_item(data: dict) -> QGraphicsPixmapItem | QGraphicsPolygonItem:
         item = data
     return item
 
+
 def get_next_z(self) -> int:
     """
     Determine the next highest Z-value to assign a new graphics item.
@@ -36,11 +38,11 @@ def get_next_z(self) -> int:
     """
     return max((i.zValue() for i in self.scene.items()), default=-1) + 1
 
+
 def reorder_list_by_z(layer_list):
     """
     Reorders the layer list to match the Z-order of items in the scene.
     """
-    # Extract all items with their graphics items and labels
     items_data = []
     for i in range(layer_list.count()):
         list_item = layer_list.item(i)
@@ -51,17 +53,14 @@ def reorder_list_by_z(layer_list):
                 (graphics_item.zValue(), list_item.text(), list_item, data)
             )
 
-    # Sort in descending z-value order (topmost first)
     items_data.sort(reverse=True, key=itemgetter(0))
 
-    # Assign new z-values: topmost gets highest z, bottommost gets 0
     for new_z, (_, _, list_item, data) in enumerate(reversed(items_data)):
         if isinstance(data, dict):
             data["item"].setZValue(new_z)
         else:
             data.setZValue(new_z)
 
-    # Sort again with updated z-values
     items_data.sort(
         reverse=True,
         key=lambda t: (
@@ -71,12 +70,12 @@ def reorder_list_by_z(layer_list):
         ),
     )
 
-    # Rebuild the QListWidget to match new z-value order
     layer_list.clear()
     for _, label, _, data in items_data:
         new_item = QListWidgetItem(label)
         new_item.setData(Qt.ItemDataRole.UserRole, data)
         layer_list.addItem(new_item)
+
 
 def show_dialog_box(
     self,
@@ -100,12 +99,7 @@ def show_dialog_box(
     dlg.StandardButton(button)
     dlg.setIcon(icon)
     button = dlg.exec()
-    # Look up the button enum entry for the result.
-    # button = QMessageBox.StandardButton(button)
-    # if button == QMessageBox.StandardButton.Yes:
-    #     print("Yes!")
-    # else:
-    #     print("No!")
+
 
 def get_image_path(layer_list) -> Path | None:
     """
@@ -124,6 +118,7 @@ def get_image_path(layer_list) -> Path | None:
             return None
         return file_path
     return None
+
 
 def get_image_item(layer_list):
     """
@@ -146,6 +141,7 @@ def get_image_item(layer_list):
             return layer_data["item"]
     return None
 
+
 def compute_zoom(event_delta_y: int, current_zoom: int, min_zoom=-10, max_zoom=20):
     zoom_in_factor = 1.25
     zoom_out_factor = 1 / zoom_in_factor
@@ -162,31 +158,29 @@ def compute_zoom(event_delta_y: int, current_zoom: int, min_zoom=-10, max_zoom=2
 
     return zoom_factor, new_zoom
 
+
 def get_resource_path(relative_path):
     """
     Get absolute path to resource, works for dev and for PyInstaller.
-    
+
     Args:
         relative_path (str): The path relative to the application root
-        
+
     Returns:
         str: The absolute path to the resource
     """
     if getattr(sys, 'frozen', False):
-        # Running in a bundle
         base_path = sys._MEIPASS
     else:
-        # Running in normal Python environment
         base_path = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    
+
     return os.path.join(base_path, relative_path)
 
+
 def get_file(self, initial_dir, filters):
-    # initial_dir = get_resource_path(resource_path)
-    # filters = "Images (*.png *.jpg *.jpeg *.tif *.tiff);; All files (*.*)"
     file_path, _ = QFileDialog.getOpenFileName(
-        self, 
-        caption="Open File", 
+        self,
+        caption="Open File",
         directory=initial_dir,
         filter=filters
     )

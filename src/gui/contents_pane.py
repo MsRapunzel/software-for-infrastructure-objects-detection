@@ -9,7 +9,7 @@ Usage Example:
     contents_pane = ContentsPane()
     conents_pane.show()
 """
-from PyQt6.QtWidgets import ( 
+from PyQt6.QtWidgets import (
     QListWidget,
     QPushButton,
     QProgressBar,

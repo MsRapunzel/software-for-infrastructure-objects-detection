@@ -1,1 +1,1 @@
-from .object_detection import label_func, get_model, predict_polygons #, add_polygon_layer1
+from .object_detection import label_func, get_model, predict_polygons
