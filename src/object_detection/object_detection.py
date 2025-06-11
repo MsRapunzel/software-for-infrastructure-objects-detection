@@ -20,9 +20,8 @@ def label_func(fname: Path) -> Path:
     return fname.parent / fname.name.replace("image", "label")
 
 
-def get_model() -> Learner:
+def get_model(model_path: str) -> Learner:
     """Load custom FastAI model. Ensures `label_func` is in scope when unpickling."""
-    model_path = get_resource_path('resources/model/building_segmentation.pkl')
     learn = load_learner(model_path)
     return learn
 

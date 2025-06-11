@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QAction, QColor, QPen, QPixmap, QPolygonF
 from PyQt6.QtCore import QPointF, Qt
 
-import helpers as hp
+from . import helpers as hp
 from object_detection.object_detection import label_func, get_model, predict_polygons
 
 
@@ -116,34 +116,28 @@ class ApplicationService:
             polygon_item = QGraphicsPolygonItem(QPolygonF(points))
 
             r, g, b = [int((random() * 0.6 + 0.4) * 255) for _ in range(3)]
-            polygon_item.setBrush(Qt.GlobalColor.transparent)  # Optional: skip fill
-            polygon_item.setPen(QPen(QColor(r, g, b), 2))  # Edge color and width
-            polygon_item.setBrush(QColor(r, g, b, int(0.4 * 255)))  # Filled with alpha
+            polygon_item.setBrush(Qt.GlobalColor.transparent)
+            polygon_item.setPen(QPen(QColor(r, g, b), 2))
+            polygon_item.setBrush(QColor(r, g, b, int(0.4 * 255)))
 
             items.append(polygon_item)
 
         if not items:
             return
 
-        # Group the items
         group = self.scene.createItemGroup(items)
         next_z = max((i.zValue() for i in self.scene.items()), default=-1) + 1
         group.setZValue(next_z)
 
-        # Calculate the bounding rectangle of the group
         rect = group.boundingRect()
 
-        # Calculate the scale factors
         scale_x = image_width / rect.width()
         scale_y = image_height / rect.height()
 
-        # Use the minimum of the two scales to avoid distortion
         scale = min(scale_x, scale_y)
 
-        # Apply the scaling transformation
         group.setScale(scale)
 
-        # Calculate the top left coordinates of the image
         image_x = image_item.x()
         image_y = image_item.y()
 
@@ -152,7 +146,6 @@ class ApplicationService:
         group.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
         group.setFlag(QGraphicsItemGroup.GraphicsItemFlag.ItemIsSelectable)
 
-        # Add to layer list
         list_item = QListWidgetItem("Polygons Layer")
         layer_metadata = {
             "item": group,
@@ -170,13 +163,33 @@ class ApplicationService:
         Loads a detection model, predicts polygons on the image,
         displays a success dialog, and adds the polygon layer to the scene.
         """
+        initial_dir = hp.get_resource_path("resources/model")
+        filters = "Deep Learning Models (*.pkl)"
+        model_path, _ = QFileDialog.getOpenFileName(
+            self.parent,
+            caption="Open Deep Learning Model",
+            directory=initial_dir,
+            filter=filters
+        )
+
+        if not model_path:
+            hp.show_dialog_box(
+                self.parent,
+                window_title="Warning",
+                text="Model could not be opened. Please, try again.",
+                button=QMessageBox.StandardButton.Discard,
+                icon=QMessageBox.Icon.Critical,
+            )
+            return
+
+        model = get_model(model_path)
+
         progress_bar = self.parent.contents_pane.progress_bar
         progress_bar.setVisible(True)
         progress_bar.setValue(10)
 
-        model = get_model()
-        file_path = hp.get_image_path(self.layer_list)
-        if not file_path:
+        img_path = hp.get_image_path(self.layer_list)
+        if not img_path:
             hp.show_dialog_box(
                 self.parent,
                 window_title="Warning",
@@ -190,9 +203,8 @@ class ApplicationService:
         progress_bar.setValue(30)
 
         try:
-            polygons = predict_polygons(file_path, model, progress_callback=lambda x: progress_bar.setValue(x))
+            polygons = predict_polygons(img_path, model, progress_callback=lambda x: progress_bar.setValue(x))
             progress_bar.setValue(80)
-
             self.add_polygon_layer(polygons)
 
             progress_bar.setValue(100)
