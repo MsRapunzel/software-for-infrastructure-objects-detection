@@ -9,8 +9,8 @@ Usage Example:
     window.show()
     sys.exit(app.exec())
 """
-from PyQt6.QtCore import Qt  # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import (  # pylint: disable=no-name-in-module
+from PyQt6.QtCore import Qt 
+from PyQt6.QtWidgets import ( 
     QGraphicsScene,
     QGraphicsView,
     QSplitter,
@@ -48,7 +48,7 @@ class ApplicationWindow(QWidget):
         # self.tools_pane = ToolsPane(self)
         self.service = ApplicationService(self)
 
-        # TODO: Connect Menu actions ???
+        # TODO: Connect Menu actions
         # self.menu_bar.action_save.triggered.connect(self.save)
         # self.menu_bar.action_save_as.triggered.connect(self.save_as)
         # self.menu_bar.action_enter_full_screen.triggered.connect(self.enter_full_screen)
@@ -58,7 +58,6 @@ class ApplicationWindow(QWidget):
         splitter.addWidget(self.map_pane)
         splitter.setSizes([200, 600])
 
-        # Set up Main layout
         layout = QVBoxLayout(self)
         layout.setMenuBar(self.menu_bar)
         layout.addWidget(splitter)

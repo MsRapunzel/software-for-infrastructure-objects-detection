@@ -12,6 +12,6 @@ misc
 pyqtvenv
 dist
 README.md
-src/resources/model/building_segmentation.pkl
+src/resources/model/*
 
 src/gui/tools_pane.py

@@ -9,7 +9,7 @@ Usage Example:
     contents_pane = ContentsPane()
     conents_pane.show()
 """
-from PyQt6.QtWidgets import (  # pylint: disable=no-name-in-module
+from PyQt6.QtWidgets import ( 
     QListWidget,
     QPushButton,
     QProgressBar,
@@ -51,6 +51,8 @@ class ContentsPane(QWidget):
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(False)
-        self.progress_bar.setFormat("Progress: %p") # FIXME: Set format to show text and percentage
+        # Note: QMacStyle never draws the text. Read more at:
+        # https://doc.qt.io/qt-6/qprogressbar.html#textVisible-prop
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("Progress: %p")
         layout.addWidget(self.progress_bar)
-

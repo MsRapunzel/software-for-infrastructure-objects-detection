@@ -2,7 +2,7 @@ import os
 from random import random
 from typing import Optional
 
-from PyQt6.QtWidgets import ( # pylint: disable=no-name-in-module
+from PyQt6.QtWidgets import (
     QFileDialog,
     QGraphicsItemGroup,
     QGraphicsPixmapItem,
@@ -10,8 +10,8 @@ from PyQt6.QtWidgets import ( # pylint: disable=no-name-in-module
     QMessageBox,
     QWidget,
 )
-from PyQt6.QtGui import QAction, QColor, QPen, QPixmap, QPolygonF # pylint: disable=no-name-in-module
-from PyQt6.QtCore import QPointF, Qt  # pylint: disable=no-name-in-module
+from PyQt6.QtGui import QAction, QColor, QPen, QPixmap, QPolygonF
+from PyQt6.QtCore import QPointF, Qt 
 
 from .helpers import *
 from object_detection.object_detection import label_func, get_model, predict_polygons
@@ -20,7 +20,6 @@ class ApplicationService:
     def __init__(self, parent_widget: Optional[QWidget] = None):
         self.parent = parent_widget
 
-        # These are now accessible through parent
         self.scene = parent_widget.scene
         self.layer_list = parent_widget.contents_pane.layer_list
         self.view = parent_widget.map_pane
@@ -52,7 +51,6 @@ class ApplicationService:
         if pixmap.isNull():
             return
 
-        # Scale and center
         scaled_pixmap = pixmap.scaled(
             self.scene_width,
             self.scene_height,
@@ -92,7 +90,6 @@ class ApplicationService:
         :param polygons_data: List of polygons, where each is [x1, y1, x2, y2, ...]
         Adapted from pycocotools coco.py line 228 (.showAnns(self, anns)).
         """
-        # Get the currently displayed image and its dimensions
         image_item = get_image_item(self.layer_list)
         if not image_item:
             show_dialog_box(
@@ -111,13 +108,11 @@ class ApplicationService:
 
         for coords in polygons_data:
             if len(coords) < 6:
-                continue  # skip invalid polygons
+                continue
 
-            # Convert to QPolygonF
             points = [QPointF(coords[i], coords[i + 1]) for i in range(0, len(coords), 2)]
             polygon_item = QGraphicsPolygonItem(QPolygonF(points))
 
-            # Set random semi-bright color like matplotlib code
             r, g, b = [int((random() * 0.6 + 0.4) * 255) for _ in range(3)]
             polygon_item.setBrush(Qt.GlobalColor.transparent)  # Optional: skip fill
             polygon_item.setPen(QPen(QColor(r, g, b), 2))  # Edge color and width
@@ -211,29 +206,6 @@ class ApplicationService:
             )
             progress_bar.setVisible(False)
             return
-
-    """def detect(self):
-        # Run object detection on the currently selected image.
-
-        # Loads a detection model, predicts polygons on the image,
-        # displays a success dialog, and adds the polygon layer to the scene.
-        model = get_model()
-        file_path = get_image(self.layer_list)
-        if not file_path:
-            show_dialog_box(
-                self.parent,
-                window_title="Warning",
-                text="The chosen layer is not an image. Please, try again.",
-                button=QMessageBox.StandardButton.Discard,
-                icon=QMessageBox.Icon.Critical,
-            )
-            return
-        
-        polygons = predict_polygons(file_path, model)
-        show_dialog_box(self.parent, "Success", "The object detection is finished.")
-        self.add_polygon_layer(polygons)
-        # object_detection.add_polygon_layer(self, polygons)
-    """
     
     def up(self):
         """Move the currently selected layer up in Z-order."""
@@ -307,7 +279,6 @@ class ApplicationService:
 
             if item:
                 item.setSelected(True)
-                # print(f"Selected item z-value: {item.zValue()}")
 
     def create_action_save(parent, slot):
         action = QAction("Save", parent)

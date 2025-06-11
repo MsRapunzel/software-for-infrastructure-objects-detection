@@ -1,7 +1,7 @@
 """Main Application Window for the GUI."""
 
-from PyQt6.QtGui import QAction # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import QMenuBar, QMenu # pylint: disable=no-name-in-module
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMenuBar, QMenu
 
 # from utils.slots import ApplicationService
 

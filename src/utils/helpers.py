@@ -5,8 +5,8 @@ from operator import itemgetter
 from pathlib import Path
 import sys
 
-from PyQt6.QtCore import Qt # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import ( # pylint: disable=no-name-in-module
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
     QFileDialog,
     QGraphicsPixmapItem,
     QGraphicsPolygonItem,

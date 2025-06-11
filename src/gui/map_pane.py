@@ -10,9 +10,9 @@ Usage Example:
     view = InteractiveGraphicsView(scene)
     view.show()
 """
-from PyQt6.QtCore import Qt  # pylint: disable=no-name-in-module
-from PyQt6.QtGui import QPainter, QWheelEvent  # pylint: disable=no-name-in-module
-from PyQt6.QtWidgets import ( # pylint: disable=no-name-in-module
+from PyQt6.QtCore import Qt 
+from PyQt6.QtGui import QPainter, QWheelEvent 
+from PyQt6.QtWidgets import (
     QGraphicsScene,
     QGraphicsView,
     QWidget,
@@ -45,7 +45,7 @@ class MapPane(QGraphicsView):
         self._max_zoom = 10
 
 
-    def wheelEvent(self, event: QWheelEvent):  # pylint: disable=invalid-name
+    def wheelEvent(self, event: QWheelEvent):
         """
         Handle mouse wheel events to perform zooming in/out.
 
