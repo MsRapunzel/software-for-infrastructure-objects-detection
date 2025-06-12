@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # --- Environment Setup ---
-ENV_NAME="buildvenv"
+ENV_NAME="venv"
 TEST_COMMAND="PYTHONPATH=src pytest -s -v tests/test_gui.py"
 
 if [ ! -d "$ENV_NAME" ]; then
