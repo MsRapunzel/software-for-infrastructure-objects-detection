@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Build and Package App
+name: Build and Release App
 
 on:
   workflow_dispatch:
@@ -10,25 +10,23 @@ permissions:
   contents: read
 
 jobs:
-  build:
-
+  build-project:
+    name: Build
     runs-on: macos-latest
-
     steps:
     - uses: actions/checkout@v4
-
+      with:
+        lfs: true
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
       id: setup_python
       with:
         python-version: '3.11'
-
     - name: Restore cached virtualenv
       uses: actions/cache/restore@v4
       with:
         key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}
         path: .venv
-
     - name: Install dependencies
       run: |
         python -m venv .venv
@@ -38,29 +36,50 @@ jobs:
         python -m pip install -r requirements.txt
         echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
         echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
-
     - name: Saved cached virtualenv
       uses: actions/cache/save@v4
       with:
         key: venv-${{ runner.os }}-${{ steps.setup_python.outputs.python-version }}-${{ hashFiles('requirements.txt') }}
         path: .venv
-        
     - name: Make build.sh executable
       run: chmod +x build.sh
-
     - name: Run build script
       run: ./build.sh
-
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 src --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
     - name: Upload build application
       uses: actions/upload-artifact@v4
       with:
         name: infrastructure-detector-build-macos
         path: dist/Infrastructure\ Objects\ Detector.dmg
         retention-days: 7
+  release-project:
+    name: Release
+    runs-on: macos-latest
+    needs: build-project
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: infrastructure-detector-build-macos
+      - name: Create GitHub Release
+        id: create-new-release
+        uses: actions/create-release@v1
+        env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create-new-release.outputs.upload_url }}
+          asset_path: Infrastructure Objects Detector.dmg
+          asset_name: Infrastructure Objects Detector.dmg
+          asset_content_type: application/x-apple-diskimage
