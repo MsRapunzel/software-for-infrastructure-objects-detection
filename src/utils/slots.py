@@ -3,7 +3,6 @@ from random import random
 from typing import Optional
 
 from PyQt6.QtWidgets import (
-    QFileDialog,
     QGraphicsItemGroup,
     QGraphicsPixmapItem,
     QGraphicsPolygonItem,
@@ -16,6 +15,7 @@ from PyQt6.QtCore import QPointF, Qt
 
 from . import helpers as hp
 from object_detection.object_detection import label_func, get_model, predict_polygons
+from utils.logger_config import logger
 
 
 class ApplicationService:
@@ -32,22 +32,7 @@ class ApplicationService:
         """Slot. Select an image from a file dialog and add it to the `QGraphicsScene`."""
         initial_dir = hp.get_resource_path("resources/demo_images")
         filters = "Images (*.png *.jpg *.jpeg *.tif *.tiff);; All files (*.*)"
-        file_path, _ = QFileDialog.getOpenFileName(
-            self.parent,
-            caption="Open Image",
-            directory=initial_dir,
-            filter=filters
-        )
-
-        if not file_path:
-            hp.show_dialog_box(
-                self.parent,
-                window_title="Warning",
-                text="Image could not be opened. Please, try again.",
-                button=QMessageBox.StandardButton.Discard,
-                icon=QMessageBox.Icon.Critical,
-            )
-            return
+        file_path = hp.get_file(self, initial_dir, filters)
 
         pixmap = QPixmap(file_path)
         if pixmap.isNull():
@@ -82,6 +67,7 @@ class ApplicationService:
         self.layer_list.addItem(list_item)
         hp.reorder_list_by_z(self.layer_list)
         self.view.fitInView(self.scene.sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        logger.info(f"Image {layer_metadata.get('file_path')} added to the scene.")
 
     def add_polygon_layer(self, polygons_data):
         """
@@ -163,30 +149,9 @@ class ApplicationService:
         Loads a detection model, predicts polygons on the image,
         displays a success dialog, and adds the polygon layer to the scene.
         """
-        initial_dir = hp.get_resource_path("resources/model")
-        filters = "Deep Learning Models (*.pkl)"
-        model_path, _ = QFileDialog.getOpenFileName(
-            self.parent,
-            caption="Open Deep Learning Model",
-            directory=initial_dir,
-            filter=filters
-        )
-
-        if not model_path:
-            hp.show_dialog_box(
-                self.parent,
-                window_title="Warning",
-                text="Model could not be opened. Please, try again.",
-                button=QMessageBox.StandardButton.Discard,
-                icon=QMessageBox.Icon.Critical,
-            )
-            return
-
-        model = get_model(model_path)
-
+        logger.info("Starting object detection.")
         progress_bar = self.parent.contents_pane.progress_bar
         progress_bar.setVisible(True)
-        progress_bar.setValue(10)
 
         img_path = hp.get_image_path(self.layer_list)
         if not img_path:
@@ -200,17 +165,28 @@ class ApplicationService:
             progress_bar.setVisible(False)
             return
 
+        initial_dir = hp.get_resource_path("resources/model")
+        filters = "Deep Learning Models (*.pkl)"
+        model_path = hp.get_file(self, initial_dir, filters)
+        if model_path is None:
+            return
+        
+        model = get_model(model_path)
+
         progress_bar.setValue(30)
 
         try:
-            polygons = predict_polygons(img_path, model, progress_callback=lambda x: progress_bar.setValue(x))
+            logger.info("Starting predicting...")
+            polygons, coverage_pct, num_features = predict_polygons(img_path, model, progress_callback=lambda x: progress_bar.setValue(x))
             progress_bar.setValue(80)
             self.add_polygon_layer(polygons)
 
             progress_bar.setValue(100)
-            hp.show_dialog_box(self.parent, "Success", "The object detection is finished.")
+            logger.info("Successfully finished predicting...")
+            hp.show_dialog_box(self.parent, "Success", f"The object detection is finished.\nEstimated building coverage: {coverage_pct:.2f}%\nEstimated number of separate buildings: {num_features}")
 
         except Exception as e:
+            logger.exception(f"Detection failed: {str(e)}")
             hp.show_dialog_box(
                 self.parent,
                 window_title="Error",
@@ -223,50 +199,22 @@ class ApplicationService:
 
     def up(self):
         """Move the currently selected layer up in Z-order."""
-        current = self.layer_list.currentItem()
-
-        if not current:
-            return
-
-        layer = current.data(Qt.ItemDataRole.UserRole)
-        item = hp.unwrap_item(layer)
-        if layer:
-            layers = sorted(self.scene.items(), key=lambda i: i.zValue())
-            index = layers.index(item)
-            if index < len(layers) - 1:
-                above_item = layers[index + 1]
-                z1, z2 = item.zValue(), above_item.zValue()
-                item.setZValue(z2)
-                above_item.setZValue(z1)
-                hp.reorder_list_by_z(self.layer_list)
+        hp.move_layer(self.scene, self.layer_list, direction="up")
+        logger.debug("Moved layer up in Z-order.")
 
     def down(self):
-        """Move currently selected layer down in Z-order."""
-        current = self.layer_list.currentItem()
-
-        if not current:
-            return
-
-        layer = current.data(Qt.ItemDataRole.UserRole)
-        item = hp.unwrap_item(layer)
-        if item:
-            items = sorted(self.scene.items(), key=lambda i: i.zValue())
-            index = items.index(item)
-            if index > 0:
-                below_item = items[index - 1]
-                z1, z2 = item.zValue(), below_item.zValue()
-                item.setZValue(z2)
-                below_item.setZValue(z1)
-                hp.reorder_list_by_z(self.layer_list)
+        """Move the currently selected layer down in Z-order."""
+        hp.move_layer(self.scene, self.layer_list, "down")
+        logger.debug("Moved layer down in Z-order.")
 
     def delete_layer(self):
         """
         Remove currently selected layer from both the scene and the layer list.
-
         After deletion, the remaining layers are reordered to maintain consistent Z-values.
         """
         current = self.layer_list.currentItem()
         if not current:
+            logger.warning("Delete requested, but no layer is selected.")
             return
 
         layer_data = current.data(Qt.ItemDataRole.UserRole)
@@ -274,6 +222,7 @@ class ApplicationService:
         self.scene.removeItem(item)
         self.layer_list.takeItem(self.layer_list.row(current))
         hp.reorder_list_by_z(self.layer_list)
+        logger.info(f"Deleted layer: {current.text()}")
 
     def select_item(self, current, _):
         """
@@ -293,6 +242,8 @@ class ApplicationService:
 
             if item:
                 item.setSelected(True)
+                logger.info(f"Selected Item: {current.text()}")
+
 
     def create_action_save(parent, slot):
         action = QAction("Save", parent)

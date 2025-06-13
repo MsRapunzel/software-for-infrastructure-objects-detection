@@ -10,6 +10,7 @@ a = Analysis(
         ('src/resources/model/building_segmentation.pkl', 'resources/model'),
         ('src/resources/demo_images', 'resources/demo_images'),
         ('src/resources/icons/app_icon.icns', 'resources/icons'),
+        ('src/resources/logs', 'resources/logs'),
     ],
     hiddenimports=['PyQt6.sip'],
     hookspath=[],

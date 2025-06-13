@@ -4,6 +4,7 @@ import os
 from operator import itemgetter
 from pathlib import Path
 import sys
+from typing import Literal
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -179,7 +180,7 @@ def get_resource_path(relative_path):
 
 def get_file(self, initial_dir, filters):
     file_path, _ = QFileDialog.getOpenFileName(
-        self,
+        self.parent,
         caption="Open File",
         directory=initial_dir,
         filter=filters
@@ -195,3 +196,34 @@ def get_file(self, initial_dir, filters):
         )
         return
     return file_path
+
+
+def move_layer(scene, layer_list, direction: Literal["up", "down"]):
+    """Move the selected layer up or down in Z-order."""
+    from utils.logger_config import logger
+
+    current = layer_list.currentItem()
+    if not current:
+        logger.warning(f"Move {direction} requested, but no layer is selected.")
+        return
+
+    layer = current.data(Qt.ItemDataRole.UserRole)
+    item = unwrap_item(layer)
+    if not item:
+        return
+
+    items = sorted(scene.items(), key=lambda i: i.zValue())
+    index = items.index(item)
+
+    if direction == "up" and index < len(items) - 1:
+        target_item = items[index + 1]
+    elif direction == "down" and index > 0:
+        target_item = items[index - 1]
+    else:
+        return
+
+    z1, z2 = item.zValue(), target_item.zValue()
+    item.setZValue(z2)
+    target_item.setZValue(z1)
+    reorder_list_by_z(layer_list)
+
