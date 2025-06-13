@@ -32,7 +32,7 @@ class ApplicationService:
         """Slot. Select an image from a file dialog and add it to the `QGraphicsScene`."""
         initial_dir = hp.get_resource_path("resources/demo_images")
         filters = "Images (*.png *.jpg *.jpeg *.tif *.tiff);; All files (*.*)"
-        file_path = hp.get_file(self, initial_dir, filters)
+        file_path = hp.get_file(self, initial_dir, filters, self.add_image)
 
         pixmap = QPixmap(file_path)
         if pixmap.isNull():
@@ -167,7 +167,7 @@ class ApplicationService:
 
         initial_dir = hp.get_resource_path("resources/model")
         filters = "Deep Learning Models (*.pkl)"
-        model_path = hp.get_file(self, initial_dir, filters)
+        model_path = hp.get_file(self, initial_dir, filters, self.detect)
         if model_path is None:
             return
         

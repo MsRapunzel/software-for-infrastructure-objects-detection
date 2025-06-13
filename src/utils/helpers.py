@@ -97,9 +97,11 @@ def show_dialog_box(
     dlg = QMessageBox(self)
     dlg.setWindowTitle(window_title)
     dlg.setText(text)
-    dlg.StandardButton(button)
+    dlg.setStandardButtons(button | QMessageBox.StandardButton.Cancel)
     dlg.setIcon(icon)
-    button = dlg.exec()
+    choice = dlg.exec()
+
+    return choice
 
 
 def get_image_path(layer_list) -> Path | None:
@@ -178,7 +180,7 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-def get_file(self, initial_dir, filters):
+def get_file(self, initial_dir, filters, callback=None):
     file_path, _ = QFileDialog.getOpenFileName(
         self.parent,
         caption="Open File",
@@ -187,13 +189,18 @@ def get_file(self, initial_dir, filters):
     )
 
     if not file_path:
-        show_dialog_box(
+        button = QMessageBox.StandardButton.Retry
+        choice = show_dialog_box(
             self.parent,
             window_title="Warning",
             text="File could not be opened. Please, try again.",
-            button=QMessageBox.StandardButton.Discard,
+            button=button,
             icon=QMessageBox.Icon.Critical,
         )
+        if choice == button and callback:
+            callback()
+        elif choice == QMessageBox.StandardButton.Cancel:
+            pass
         return
     return file_path
 

@@ -1,10 +1,12 @@
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
+    QApplication,
+    QFileDialog,
     QGraphicsPixmapItem,
     QListWidgetItem,
-    QFileDialog,
+    QMessageBox,
 )
 import pytest
 
@@ -68,6 +70,35 @@ def test_add_image(app_window, qtbot):
     assert len(app_window.scene.items()) == 1
     assert isinstance(app_window.scene.items()[0], QGraphicsPixmapItem)
     assert app_window.contents_pane.layer_list.count() == 1
+
+    QFileDialog.getOpenFileName = original_dialog
+
+
+def test_add_file_cancel(app_window, qtbot):
+    """Test behavior when user cancels the file dialog and clicks 'Cancel' on warning box."""
+
+    def mock_get_open_filename(*args, **kwargs):
+        return '', ''
+
+    original_dialog = QFileDialog.getOpenFileName
+    QFileDialog.getOpenFileName = mock_get_open_filename
+
+    def auto_click_discard():
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QMessageBox):
+                discard_button = widget.button(QMessageBox.StandardButton.Cancel)
+                qtbot.mouseClick(discard_button, Qt.MouseButton.LeftButton)
+                break
+
+    qtbot.addWidget(app_window)
+    qtbot.waitExposed(app_window)
+
+    QTimer.singleShot(100, auto_click_discard)
+
+    qtbot.mouseClick(app_window.contents_pane.add_image_button, Qt.MouseButton.LeftButton)
+
+    assert app_window.scene.items() == []
+    assert app_window.contents_pane.layer_list.count() == 0
 
     QFileDialog.getOpenFileName = original_dialog
 
