@@ -12,7 +12,6 @@ data
 misc
 pyqtvenv
 dist
-README.md
 
 src/gui/tools_pane.py
 src/resources/logs/*
